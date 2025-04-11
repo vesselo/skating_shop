@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="account">
+    <h2>Личный кабинет</h2>
+    
+    <div class="account-container">
+        <div class="account-sidebar">
+            <ul>
+                <li class="active"><a href="#profile">Профиль</a></li>
+                <li><a href="#orders">Мои заказы</a></li>
+                <li><a href="#settings">Настройки</a></li>
+                <li><a href="{{ url_for('logout') }}" id="logout-link">Выйти</a></li>
+            </ul>
+        </div>
+        
+        <div class="account-content">
+            <div id="profile" class="tab-content active">
+                <h3>Личные данные</h3>
+                <div class="user-info">
+                    <p><strong>ФИО:</strong> {{ user.full_name }}</p>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                    <p><strong>Телефон:</strong> {{ user.phone or 'Не указан' }}</p>
+                    <p><strong>Адрес:</strong> {{ user.address or 'Не указан' }}</p>
+                    <p><strong>Дата создания:</strong> {{ user.created_at.strftime('%d.%m.%Y') or 'Не указан' }}</p>
+                </div>
+                <button class="btn edit-profile">Редактировать профиль</button>
+            </div>
+            
+            <div id="orders" class="tab-content">
+                <h3>История заказов</h3>
+                
+                {% if orders %}
+                <div class="orders-list">
+                    {% for order in orders %}
+                    <div class="order-card">
+                        <div class="order-header">
+                            <span class="order-number">Заказ #{{ order.id }}</span>
+                            <span class="order-date">{{ order.created_at.strftime('%d.%m.%Y') }}</span>
+                            <span class="order-status {{ order.status }}">
+                                {{
+                                    {
+                                        'processing': 'В обработке',
+                                        'shipped': 'Отправлен',
+                                        'delivered': 'Доставлен',
+                                        'cancelled': 'Отменен'
+                                    }.get(order.status, order.status|capitalize)
+                                }}
+                            </span>
+                            <span class="order-total">{{ order.total }} руб.</span>
+                        </div>
+                        <div class="order-details">
+                            <ul>
+                                {% for item in orders.items %}
+                                <li>{{ item.product.name }} × {{ item.quantity }}</li>
+                                {% endfor %}
+                            </ul>                            
+                            <div class="order-full-details" style="display: none; margin-top: 15px; padding: 15px; background: #f5f5f5; border-radius: 5px;">
+                                <h4>Подробности заказа #{{ order.id }}</h4>
+                                <div class="order-info-grid">
+                                    <div>
+                                        <h5>Контактная информация</h5>
+                                        <p><strong>ФИО:</strong> {{ user.full_name }}</p>
+                                        <p><strong>Телефон:</strong> {{ user.phone }}</p>
+                                        <p><strong>Email:</strong> {{ user.email }}</p>
+                                    </div>
+                                    <div>
+                                        <h5>Доставка и оплата</h5>
+                                        <p><strong>Адрес:</strong> {{ user.address }}</p>
+                                        <p><strong>Способ оплаты:</strong> 
+                                            {% if order.payment_method == 'card' %}Картой онлайн
+                                            {% elif order.payment_method == 'cash' %}Наличными
+                                            {% else %}Не указано{% endif %}
+                                        </p>                                        
+                                    </div>
+                                </div>
+                                {% if order.comment %}
+                                <div class="order-comment">
+                                    <h5>Комментарий к заказу</h5>
+                                    <p>{{ order.comment }}</p>
+                                </div>
+                                {% endif %}
+                            </div>                            
+                            <button class="btn-toggle-details" onclick="toggleDetails(this)">Показать подробности</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p>У вас пока нет заказов</p>
+                {% endif %}
+                <button type="submit" class="bn btn-order-details" onclick="orders">Подробнее о заказах</button>
+            </div>
+            
+            <div id="settings" class="tab-content">
+                <h3>Настройки аккаунта</h3>
+                <form class="settings-form">                    
+                    <div class="form-group">
+                        <label for="password">Изменить пароль</label>
+                        <input type="password" id="password" placeholder="Новый пароль">
+                    </div>
+                    <button type="submit" class="btn">Сохранить изменения</button>                    
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+<script>
+    function toggleDetails(button) {
+        const detailsBlock = button.previousElementSibling;
+        if (detailsBlock.style.display === 'none') {
+            detailsBlock.style.display = 'block';
+            button.textContent = 'Скрыть подробности';
+        } else {
+            detailsBlock.style.display = 'none';
+            button.textContent = 'Показать подробности';
+        }
+    }
+    // Обработка выхода
+    document.getElementById('logout-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        fetch("{{ url_for('logout') }}", {
+            method: 'POST',
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = "{{ url_for('login') }}";
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при выходе:', error);
+            window.location.href = "{{ url_for('login') }}";
+        });
+    });
+    </script>
+<script src="account.js"></script>
+<script>
+    fetch('/track-page?page={{ request.path }}');
+</script>
+{% endblock %}

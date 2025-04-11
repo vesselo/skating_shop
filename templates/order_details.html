@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IceGlide - Детали заказа #{{ order.id }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/order_details.css') }}">
+    <style>
+        /* Дополнительные стили для этой страницы */
+        .order-details {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .order-header {
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .order-status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .order-status.processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .order-status.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        .order-status.cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .order-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+        .order-item {
+            display: grid;
+            grid-template-columns: 80px 2fr 1fr 1fr;
+            gap: 20px;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+        .item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .order-summary {
+            max-width: 400px;
+            margin-left: auto;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .summary-row.total {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+        .order-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #0066cc;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>IceGlide</h1>
+            <nav>
+                <ul>
+                    <li><a href="{{ url_for('index') }}">Главная</a></li>
+                    <li><a href="{{ url_for('catalog') }}">Каталог</a></li>
+                    <li><a href="{{ url_for('cart') }}">Корзина</a></li>
+                    <li>
+                        {% if 'email' in session %}
+                            <a href="{{ url_for('account') }}">Личный кабинет</a>
+                        {% else %}
+                            <a href="{{ url_for('login') }}">Войти</a>
+                        {% endif %}
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="order-details">
+            <div class="container">
+                <a href="{{ url_for('account') }}" class="back-link">← Вернуться в личный кабинет</a>
+                
+                <div class="order-header">
+                    <h2>Детали заказа #{{ order.id }}</h2>
+                    <div class="order-meta">
+                        <span class="order-date">{{ order.created_at.strftime('%d.%m.%Y в %H:%M') }}</span>
+                        <span class="order-status {{ order.status }}">
+                            {% if order.status == 'processing' %}В обработке
+                            {% elif order.status == 'completed' %}Завершен
+                            {% elif order.status == 'cancelled' %}Отменен
+                            {% else %}{{ order.status }}{% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="order-body">
+                    <div class="order-section">
+                        <h3>Информация о заказе</h3>
+                        <div class="order-info-grid">
+                            <div>
+                                <h4>Контактная информация</h4>
+                                <p><strong>ФИО:</strong> {{ order.full_name }}</p>
+                                <p><strong>Email:</strong> {{ order.email }}</p>
+                                <p><strong>Телефон:</strong> {{ order.phone }}</p>
+                            </div>
+                            <div>
+                                <h4>Доставка</h4>
+                                <p><strong>Адрес:</strong> {{ order.delivery_address }}</p>
+                                <p><strong>Способ оплаты:</strong> 
+                                    {% if order.payment_method == 'card' %}Картой онлайн
+                                    {% elif order.payment_method == 'cash' %}Наличными при получении
+                                    {% else %}Не указано{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        {% if order.comment %}
+                        <div class="order-comment">
+                            <h4>Ваш комментарий</h4>
+                            <p>{{ order.comment }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="order-section">
+                        <h3>Состав заказа</h3>
+                        <div class="order-items">
+                            {% for item in order.items %}
+                            <div class="order-item">
+                                {% if item.image %}
+                                <img src="{{ url_for('static', filename='images/' + item.image) }}" 
+                                     alt="{{ item.name }}" class="item-image">
+                                {% endif %}
+                                <div class="item-details">
+                                    <a href="{{ url_for('product', product_id=item.id) }}" class="item-name">{{ item.name }}</a>
+                                    {% if item.description %}
+                                    <p class="item-description">{{ item.description|truncate(100) }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="item-quantity">{{ item.quantity }} × {{ "%.2f"|format(item.price) }} ₽</div>
+                                <div class="item-total">{{ "%.2f"|format(item.item_total) }} ₽</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="order-summary">
+                        <div class="summary-row">
+                            <span>Промежуточный итог:</span>
+                            <span>{{ "%.2f"|format(order.subtotal) }} ₽</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Доставка:</span>
+                            <span>
+                                {% if order.total > order.subtotal %}
+                                    {{ "%.2f"|format(order.total - order.subtotal) }} ₽
+                                {% else %}
+                                    Бесплатно
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Итого:</span>
+                            <span>{{ "%.2f"|format(order.total) }} ₽</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="order-actions">
+                    {% if order.status == 'processing' %}
+                    <button class="btn btn-danger">Отменить заказ</button>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 IceGlide. Все права защищены.</p>
+        </div>
+    </footer>
+    <script>
+        fetch('/track-page?page={{ request.path }}');
+    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/account.js') }}"></script>
+    <script>
+        // Обработка кнопки отмены заказа
+        document.querySelector('.btn-danger')?.addEventListener('click', function() {
+            if(confirm('Вы уверены, что хотите отменить этот заказ?')) {
+                fetch("{{ url_for('cancel_order', order_id=order.id) }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        location.reload();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

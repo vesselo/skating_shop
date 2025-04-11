@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="orders-history-container">
+    <h1 class="orders-history-title">История ваших заказов</h1>
+    
+    {% if order_stats.total_orders > 0 %}
+    <div class="order-stats-summary">
+        <div class="stat-card">
+            <span class="stat-number">{{ order_stats.total_orders }}</span>
+            <span class="stat-label">Всего заказов</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ "%.2f"|format(order_stats.total_spent) }} ₽</span>
+            <span class="stat-label">Общая сумма</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ order_stats.first_order_date.strftime('%d.%m.%Y') }}</span>
+            <span class="stat-label">Первый заказ</span>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if orders %}
+    <div class="orders-list">
+        {% for order in orders %}
+        <div class="order-card">
+            <div class="order-header">
+                <div class="order-title">
+                    <h2>Заказ #{{ order.id }}</h2>
+                    <span class="order-date">{{ order.date.strftime('%d.%m.%Y в %H:%M') }}</span>
+                </div>
+                <div class="order-status-badge status-{{ order.status }}">
+                    {% if order.status == 'processing' %}В обработке
+                    {% elif order.status == 'shipped' %}Отправлен
+                    {% elif order.status == 'delivered' %}Доставлен
+                    {% elif order.status == 'cancelled' %}Отменён
+                    {% else %}{{ order.status }}{% endif %}
+                </div>
+            </div>
+
+            <div class="order-details">
+                <div class="order-info-section">
+                    <h3>Информация о заказе</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Сумма заказа:</span>
+                            <span class="info-value">{{ "%.2f"|format(order.total) }} ₽</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Способ оплаты:</span>
+                            <span class="info-value">
+                                {% if order.payment_method == 'card' %}Картой онлайн
+                                {% elif order.payment_method == 'cash' %}Наличными
+                                {% else %}Не указано{% endif %}
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Адрес доставки:</span>
+                            <span class="info-value">{{ order.delivery_address }}</span>
+                        </div>
+                    </div>
+                    {% if order.comment %}
+                    <div class="order-comment">
+                        <span class="comment-label">Ваш комментарий:</span>
+                        <p class="comment-text">{{ order.comment }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="order-products-section">
+                    <h3>Состав заказа</h3>
+                    <table class="order-products-table">
+                        <thead>
+                            <tr>
+                                <th class="product-col">Товар</th>
+                                <th class="price-col">Цена</th>
+                                <th class="quantity-col">Кол-во</th>
+                                <th class="total-col">Сумма</th>
+                            </tr>
+                        </thead>
+                        <tbody>                            
+                            <tr class="product-row">
+                                <td class="product-name-cell">{{ order.name }}</td>
+                                <td class="product-price">{{ "%.2f"|format(order.price) }} ₽</td>
+                                <td class="product-quantity">{{ order.quantity }} шт.</td>
+                                <td class="product-total">{{ "%.2f"|format(order.price * order.quantity) }} ₽</td>
+                            </tr>                            
+                        </tbody>
+                        <tfoot>
+                            <tr class="order-total-row">
+                                <td colspan="3" class="total-label">Итого:</td>
+                                <td class="total-value">{{ "%.2f"|format(order.total) }} ₽</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-orders-message">
+        <div class="empty-orders-content">
+            <img src="{{ url_for('static', filename='images/empty-orders.svg') }}" alt="Нет заказов" class="empty-orders-image">
+            <h2>У вас пока нет заказов</h2>
+            <p>Начните покупки в нашем каталоге товаров</p>
+            <a href="{{ url_for('catalog') }}" class="btn btn-primary">Перейти в каталог</a>
+        </div>
+    </div>
+    {% endif %}
+    <!-- Таблица всех проданных товаров -->
+    {% if orders %}
+    <div class="all-products-section">
+        <h2 class="section-title">Статистика продаж</h2>
+        <div class="table-responsive">
+            <table class="all-products-table">
+                <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Заказ</th>
+                        <th>Дата</th>
+                        <th>Товар</th>
+                        <th>Цена</th>
+                        <th>Кол-во</th>
+                        <th>Сумма</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set ns = namespace(counter=1) %}
+                    {% for order in orders %}
+                        <tr>
+                            <td>{{ ns.counter }}</td>
+                            <td>#{{ order.id }}</td>
+                            <td>{{ order.date.strftime('%d.%m.%Y') }}</td>
+                            <td>{{ order.name }}</td>
+                            <td>{{ "%.2f"|format(order.price) }} ₽</td>
+                            <td>{{ order.quantity }} шт.</td>
+                            <td>{{ "%.2f"|format(order.price * order.quantity) }} ₽</td>
+                            <td>
+                                <span class="status-badge status-{{ order.status }}">
+                                    {% if order.status == 'processing' %}В обработке
+                                    {% elif order.status == 'shipped' %}Отправлен
+                                    {% elif order.status == 'delivered' %}Доставлен
+                                    {% elif order.status == 'cancelled' %}Отменён
+                                    {% else %}{{ order.status }}{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% set ns.counter = ns.counter + 1 %}
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="6" class="text-right">Общая сумма:</td>
+                        <td colspan="2">{{ "%.2f"|format(order_stats.total_spent) }} ₽</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    <div class="analytics-button-container" style="margin-top: 40px; text-align: center;">
+        <a href="{{ url_for('analytics_dashboard') }}" class="btn btn-analytics">
+            <i class="fas fa-chart-line"></i> Перейти к статистике продаж
+        </a>
+    </div>
+</div>
+<style>
+    /* Стили для таблицы всех товаров */
+    .all-products-section {
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 1px solid #eee;
+    }
+    
+    .all-products-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    
+    .all-products-table th,
+    .all-products-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .all-products-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    
+    .all-products-table tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .status-processing {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-shipped {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+    
+    .status-delivered {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-cancelled {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+</style>
+<script>
+    fetch('/track-page?page={{ request.path }}');
+</script>
+{% endblock %}

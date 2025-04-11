@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="catalog">
+    <h2>Каталог товаров</h2>
+    
+    <div class="filters">
+        <input type="text" id="search" placeholder="Поиск товаров...">
+        
+        <select id="category-filter">
+            <option value="all">Все категории</option>
+            <option value="skates">Ботинки</option>
+            <option value="clothing">Одежда</option>
+            <option value="blades">Лезвия</option>
+        </select>
+        
+        <select id="price-sort">
+            <option value="default">Сортировка по цене</option>
+            <option value="asc">По возрастанию</option>
+            <option value="desc">По убыванию</option>
+        </select>
+    </div>
+    
+    <div class="products">
+        {% for product in products %}
+        <div class="product-card" data-category="{{ product.category }}" data-price="{{ product.price }}">
+            <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
+            <h3>{{ product.name }}</h3>
+            <p class="price">{{ product.price }} руб.</p>
+            <a href="{{ url_for('product', product_id=product.id) }}" class="btn">Подробнее</a>
+            <button class="btn add-to-cart" data-id="{{ product.id }}">В корзину</button>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+<script>
+    fetch('/track-page?page={{ request.path }}');
+</script>
+<script src='catalog.js'></script>
+{% endblock %}

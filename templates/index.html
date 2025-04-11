@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IceGlide - Магазин для фигурного катания</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>IceGlide</h1>
+            <nav>
+                <ul>
+                    <li><a href="/">Главная</a></li>
+                    <li><a href="/catalog">Каталог</a></li>
+                    <li><a href="/cart">Корзина</a></li>
+                    <li><a href="/account">Личный кабинет</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h2>Профессиональное снаряжение для фигурного катания</h2>
+            <p>Лучшие коньки, одежда и аксессуары для спортсменов любого уровня</p>
+            <a href="/catalog" class="btn">Перейти в каталог</a>
+        </section>
+
+        <section class="features">
+            <div class="feature">
+                <h3>Бесплатная доставка</h3>
+                <p>При заказе от 5000 рублей</p>
+            </div>
+            <div class="feature">
+                <h3>Гарантия качества</h3>
+                <p>Только оригинальная продукция</p>
+            </div>
+            <div class="feature">
+                <h3>Профессиональная консультация</h3>
+                <p>Поможем с выбором</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 IceGlide. Все права защищены.</p>
+        </div>
+    </footer>
+</body>
+<script>
+    fetch('/track-page?page={{ request.path }}');
+</script>
+</html>

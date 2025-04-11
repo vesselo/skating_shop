@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="cart">
+    <h2>Ваша корзина</h2>
+    
+    {% if cart_items %}
+    <div class="cart-items">
+        <table>
+            <thead>
+                <tr>
+                    <th>Товар</th>
+                    <th>Цена</th>
+                    <th>Количество</th>
+                    <th>Итого</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                <tr>
+                    <td>
+                        <img src="{{ url_for('static', filename=item.image) }}" alt="{{ item.name }}">
+                        <span>{{ item.name }}</span>
+                    </td>
+                    <td>{{ item.price }} руб.</td>
+                    <td>
+                        <input type="number" min="1" value="{{ item.quantity }}" 
+                               data-id="{{ item.id }}" class="quantity-input">
+                    </td>
+                    <td>{{ item.price * item.quantity }} руб.</td>
+                    <td>
+                        <button class="btn remove-from-cart" data-id="{{ item.id }}">Удалить</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3">Общая сумма:</td>
+                    <td colspan="2">{{ total }} руб.</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    
+    <div class="cart-actions">
+        <a href="{{ url_for('catalog') }}" class="btn secondary">Продолжить покупки</a>
+        <a href="{{ url_for('checkout') }}" class="btn">Оформить заказ</a>
+    </div>
+    {% else %}
+    <div class="empty-cart">
+        <p>Ваша корзина пуста</p>
+        <a href="{{ url_for('catalog') }}" class="btn">Перейти в каталог</a>
+    </div>
+    {% endif %}
+</section>
+<script>
+    fetch('/track-page?page={{ request.path }}');
+</script>
+<script src="cart.js"></script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="main.css">
+{% endblock %}
+{% block content %}
+<section class="product-detail">
+    <div class="product-images">
+        <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
+    </div>
+    
+    <div class="product-info">
+        <h2>{{ product.name }}</h2>
+        <p class="price">{{ product.price }} руб.</p>
+        <p class="availability">В наличии: {{ product.stock }} шт.</p>
+        
+        <div class="product-description">
+            <h3>Описание</h3>
+            <p>{{ product.description }}</p>
+        </div>
+        
+        <div class="product-specs">
+            <h3>Характеристики</h3>
+            <ul>
+                <li><strong>Категория:</strong> {{ product.category }}</li>
+                <li><strong>Бренд:</strong> {{ product.brand }}</li>
+                <li><strong>Размер:</strong> {{ product.size }}</li>
+                <li><strong>Материал:</strong> {{ product.material }}</li>
+                <li><strong>Цвет:</strong> {{ product.color }}</li>
+            </ul>
+        </div>
+        
+        <div class="product-actions">
+            <button class="btn add-to-cart" data-id="{{ product.id }}">Добавить в корзину</button>
+            <a href="/catalog" class="btn secondary">Назад в каталог</a>
+        </div>
+    </div>
+</section>
+<script>
+    fetch('/track-page?page={{ request.path }}');
+</script>
+{% endblock %}

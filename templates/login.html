@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-form">
+        <h2 class="auth-title">Вход в аккаунт</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('login') }}" class="auth-form-content">
+            <div class="form-group">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" name="email" class="form-input" required 
+                       placeholder="Ваш email" value="{{ request.form.email if request.form.email }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="password" class="form-label">Пароль</label>
+                <input type="password" id="password" name="password" class="form-input" required 
+                       placeholder="Ваш пароль">
+            </div>
+            
+            <button type="submit" class="auth-button">Войти</button>
+            
+            <div class="auth-links">
+                <a href="{{ url_for('register') }}" class="auth-link">Нет аккаунта? Зарегистрируйтесь</a>
+                <a href="#" class="auth-link">Забыли пароль?</a>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    fetch('/track-page?page={{ request.path }}');
+</script>
+<style>
+    /* Основные стили */
+    .auth-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        padding: 20px;
+        background-color: #f8f9fa;
+    }
+    
+    .auth-form {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        width: 100%;
+        max-width: 450px;
+    }
+    
+    .auth-title {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 1.8rem;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        color: #34495e;
+        font-weight: 500;
+    }
+    
+    .form-input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+    
+    .form-input:focus {
+        border-color: #3498db;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+    
+    .auth-button {
+        width: 100%;
+        padding: 12px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        margin-top: 10px;
+    }
+    
+    .auth-button:hover {
+        background-color: #2980b9;
+    }
+    
+    .auth-links {
+        margin-top: 20px;
+        text-align: center;
+    }
+    
+    .auth-link {
+        display: block;
+        color: #7f8c8d;
+        text-decoration: none;
+        margin: 8px 0;
+        transition: color 0.3s;
+    }
+    
+    .auth-link:hover {
+        color: #3498db;
+        text-decoration: underline;
+    }
+    
+    .alert {
+        padding: 12px 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+    
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+</style>
+{% endblock %}

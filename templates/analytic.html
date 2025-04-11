@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="analytics-container">
+    <h1>Аналитика посещений и продаж</h1>
+    
+    <div class="time-filter">
+        <button class="btn" data-days="7">7 дней</button>
+        <button class="btn" data-days="30">30 дней</button>
+        <button class="btn" data-days="90">90 дней</button>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h2>Посещения страниц</h2>
+            <div class="table-container">
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Страница</th>
+                            <th>Просмотры</th>                            
+                        </tr>
+                    </thead>
+                    <tbody id="statsTableBody">
+                        <!-- Данные будут загружены через JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <h2>Продажи</h2>
+            <div class="chart-container">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+<script>
+// Основной модуль аналитики
+const AnalyticsModule = (() => {
+    // Элементы DOM
+    const elements = {
+        timeFilter: document.querySelector('.time-filter'),
+        statsTableBody: document.getElementById('statsTableBody'),
+        chartCanvas: document.getElementById('salesChart')
+    };
+
+    // Ваши данные о продажах
+    const salesData = [
+        { date: '30.03.2025', amount: 140000 },
+        { date: '10.04.2025', amount: 143990 }
+    ];
+
+    // Переменные состояния
+    let chartInstance = null;
+
+    // Инициализация модуля
+    function init() {
+        setupEventListeners();
+        loadInitialData();
+        renderSalesChart(); // Добавлен вызов функции для отрисовки графика продаж
+    }
+
+    // Настройка обработчиков событий
+    function setupEventListeners() {
+        elements.timeFilter.addEventListener('click', handleFilterClick);
+    }
+
+    // Обработчик клика по фильтрам
+    function handleFilterClick(event) {
+        const btn = event.target.closest('.btn');
+        if (!btn) return;
+
+        const days = btn.dataset.days;
+        loadData(days);
+    }
+
+    // Загрузка начальных данных
+    async function loadInitialData() {
+        try {
+            showLoadingState();
+            const data = await fetchData(7);
+            if (!isValidData(data)) {
+                throw new Error('Получены неполные или некорректные данные');
+            }
+            renderData(data);
+        } catch (error) {
+            showError('Не удалось загрузить данные');
+            console.error('Ошибка загрузки:', error);
+        }
+    }
+
+    // Проверка структуры данных
+    function isValidData(data) {
+        return data && 
+               Array.isArray(data.pageStats) && 
+               Array.isArray(data.labels) && 
+               Array.isArray(data.sales);
+    }
+
+    // Загрузка данных по количеству дней
+    async function loadData(days) {
+        try {
+            showLoadingState();
+            const data = await fetchData(days);
+            if (!isValidData(data)) {
+                throw new Error('Получены неполные или некорректные данные');
+            }
+            renderData(data);
+        } catch (error) {
+            showError('Ошибка обновления данных');
+            console.error('Ошибка загрузки:', error);
+        }
+    }
+
+    // Запрос данных к серверу
+    async function fetchData(days) {
+        try {
+            const response = await fetch(`/api/analytics/data?days=${days}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Ошибка получения данных:', error);
+            throw error;
+        }
+    }
+
+    // Отрисовка данных
+    function renderData(data) {
+        renderTable(data.pageStats);
+        // renderChart(data.labels, data.sales); // Закомментировано, так как используем статические данные
+    }
+
+    // Отрисовка таблицы с проверкой данных
+    function renderTable(stats) {
+        try {
+            if (!Array.isArray(stats)) {
+                console.error('Некорректные данные статистики:', stats);
+                showError('Ошибка формата данных');
+                return;
+            }
+
+            elements.statsTableBody.innerHTML = stats.map(item => {
+                if (!item) {
+                    console.warn('Обнаружен пустой элемент в статистике');
+                    return '<tr><td colspan="2">Нет данных</td></tr>';
+                }
+                
+                const page = item.page || item.url || item.path || item.name || 'Главная';
+                const views = Number(item.views) || 0;
+                
+                return `
+                    <tr>
+                        <td>${escapeHtml(page)}</td>
+                        <td>${views.toLocaleString('ru-RU')}</td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('Ошибка отрисовки таблицы:', error);
+            showError('Ошибка отображения данных');
+        }
+    }
+
+    // Отрисовка графика продаж по дням
+    function renderSalesChart() {
+        try {
+            // Удаляем предыдущий график если существует
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            // Сортируем данные по дате
+            const sortedData = [...salesData].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // Подготавливаем данные для графика
+            const labels = sortedData.map(item => item.date);
+            const data = sortedData.map(item => item.amount);
+
+            chartInstance = new Chart(elements.chartCanvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Сумма продаж (руб)',
+                        data: data,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: true,
+                        pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                        pointBorderColor: '#fff',
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                parser: 'DD.MM.YYYY',
+                                tooltipFormat: 'DD MMMM YYYY',
+                                unit: 'day',
+                                displayFormats: {
+                                    day: 'DD MMM'
+                                }
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString('ru-RU') + ' ₽';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Продажи: ' + context.parsed.y.toLocaleString('ru-RU') + ' ₽';
+                                },
+                                afterLabel: function(context) {
+                                    return 'Дата: ' + moment(context.label, 'DD.MM.YYYY').format('DD MMMM YYYY');
+                                }
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Ошибка отрисовки графика:', error);
+        }
+    }
+
+    // Показать состояние загрузки
+    function showLoadingState() {
+        elements.statsTableBody.innerHTML = `
+            <tr>
+                <td colspan="2" class="loading-state">Загрузка данных...</td>
+            </tr>
+        `;
+    }
+
+    // Показать ошибку
+    function showError(message) {
+        elements.statsTableBody.innerHTML = `
+            <tr>
+                <td colspan="2" class="error-state">${escapeHtml(message)}</td>
+            </tr>
+        `;
+    }
+
+    // Экранирование HTML
+    function escapeHtml(unsafe) {
+        if (unsafe == null) return '';
+        return String(unsafe)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Публичные методы
+    return {
+        init: init
+    };
+})();
+
+// Инициализация модуля при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    AnalyticsModule.init();
+});
+</script>
+
+<style>
+.analytics-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.time-filter {
+    margin: 20px 0;
+    display: flex;
+    gap: 10px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stats-table th, .stats-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.stats-table th {
+    background-color: #f5f5f5;
+    position: sticky;
+    top: 0;
+}
+
+.chart-container {
+    height: 400px;
+    margin-top: 20px;
+}
+
+.loading-state, .error-state {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.error-state {
+    color: #e74c3c;
+}
+</style>
+{% endblock %}
