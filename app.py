@@ -18,6 +18,8 @@ app.secret_key = 'your_secret_key_here'
 
 bcrypt = Bcrypt(app)
 
+def create_app():
+   return app
 
 def get_db_connection():
     conn = psycopg2.connect(
