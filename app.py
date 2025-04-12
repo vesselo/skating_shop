@@ -21,6 +21,9 @@ bcrypt = Bcrypt(app)
 def create_app():
    return app
 
+if __name__ == '__main__':
+    app.run(debug=True, port=os.getenv("PORT", default=5000))
+
 def get_db_connection():
     conn = psycopg2.connect(
         host="localhost",
